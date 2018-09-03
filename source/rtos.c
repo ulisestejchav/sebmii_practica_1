@@ -130,12 +130,9 @@ rtos_task_handle_t rtos_create_task(void (*task_body)(), uint8_t priority,
 	}
 }
 
-
-//FUNCIÓN FALTANTE
 rtos_tick_t rtos_get_clock(void)
 {
-	//Retorna el valor del reloj del sistema
-	return 0;
+	return rtos_get_clock();//Retorna el valor del reloj del sistema
 }
 
 //FUNCIÓN NO 100% REVISADA
