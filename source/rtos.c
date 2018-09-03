@@ -132,7 +132,7 @@ rtos_task_handle_t rtos_create_task(void (*task_body)(), uint8_t priority,
 
 rtos_tick_t rtos_get_clock(void)
 {
-	return rtos_get_clock();//Retorna el valor del reloj del sistema
+	return task_list.global_tick;//Retorna el valor del reloj del sistema
 }
 
 //FUNCIÓN NO 100% REVISADA
