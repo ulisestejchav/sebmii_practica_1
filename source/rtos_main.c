@@ -2,7 +2,7 @@
 #include "pin_mux.h"
 #include "clock_config.h"
 #include "fsl_debug_console.h"
-
+//comentario de
 #include "rtos.h"
 
 void dummy_task1(void)
