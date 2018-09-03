@@ -8,6 +8,7 @@
 void dummy_task1(void)
 {
 	uint8_t counter = 0;
+
 	for (;;)
 	{
 		PRINTF("IN TASK 1: %i +++++++++++++++\r\n", counter);

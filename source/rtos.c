@@ -120,7 +120,7 @@ rtos_task_handle_t rtos_create_task(void (*task_body)(), uint8_t priority,
 		{
 			task_list.tasks[task_list.nTasks].state = S_SUSPENDED; //Pone la tarea en estado de suspendido
 		}
-		task_list.tasks[task_list.nTasks].sp = &(task_list.tasks[task_list.nTasks].stack[RTOS_STACK_SIZE]); //Inicializa el stack de la tarea apuntando al final del stack, tomando en cuenta el tamaño inicial del stack
+		task_list.tasks[task_list.nTasks].sp = &(task_list.tasks[task_list.nTasks].stack[RTOS_STACK_SIZE-1])-STACK_FRAME_SIZE; //Inicializa el stack de la tarea apuntando al final del stack, tomando en cuenta el tamaño inicial del stack
 		task_list.tasks[task_list.nTasks].stack[RTOS_STACK_SIZE-STACK_PSR_OFFSET] = STACK_PSR_DEFAULT; //Inicializa el stack frame inicial, con la dirección de retorno en el cuerpo de la tarea y el PSR en el valor por defecto
 		task_list.tasks[task_list.nTasks].stack[RTOS_STACK_SIZE-STACK_PSR_OFFSET-1] = (uint32_t)task_body;
 		task_list.tasks[task_list.nTasks].local_tick=0; //Inicializa el reloj local en 0
@@ -138,7 +138,7 @@ rtos_tick_t rtos_get_clock(void)
 //FUNCIÓN NO 100% REVISADA
 void rtos_delay(rtos_tick_t ticks)
 {
-	task_list.tasks[task_list.current_task].state = S_SUSPENDED; //Cambias el estado de la tarea actual a suspendida
+	task_list.tasks[task_list.current_task].state = S_WAITING; //Cambias el estado de la tarea actual a suspendida
 	task_list.tasks[task_list.current_task].local_tick = ticks; //Asignas ticks al reloj local de la tarea
 	dispatcher(kFromNormalExec); //Llamas al dispatcher para que cambie de contexto
 }
@@ -192,7 +192,7 @@ FORCE_INLINE static void context_switch(task_switch_type_e type)
 	static uint8_t first = 1;
 	if(!first) //Verifica si es la primera vez que entramos, ya que si es la primera vez, no necesiramos respaldar el SP de una tarea que no sea ha creado todavía
 	{
-		task_list.tasks[task_list.current_task].sp = (uint8_t*)sp - 9; //Guardas el valor del stack pointer en donde le corresponde a la estructura de la tarea (-9 porque el compilador mueve la dirección)
+		task_list.tasks[task_list.current_task].sp = (uint32_t*)sp - 9; //Guardas el valor del stack pointer en donde le corresponde a la estructura de la tarea (-9 porque el compilador mueve la dirección)
 	}
 	else
 	{
@@ -202,7 +202,7 @@ FORCE_INLINE static void context_switch(task_switch_type_e type)
 	task_list.current_task = task_list.next_task; //Te pasas a la siguiente tarea
 
 	//AQUÍ DUDA, en el pseudocódigo dice que se debe hacer esto, pero, ¿si es necesario? Si no mal recuerdo, en clase no lo pusimos.
-	task_list.tasks[current_task].state = S_RUNNING; //Pone siguiente_tarea en estado de "corriendo"
+	task_list.tasks[task_list.current_task].state = S_RUNNING; //Pone siguiente_tarea en estado de "corriendo"
 	//AQUÍ DUDA
 
 	SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;//Activas la bandera del PENDSV para llamar la interrupción.
