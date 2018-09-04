@@ -98,6 +98,7 @@ void rtos_start_scheduler(void)
 	init_is_alive();
 #endif
 	task_list.global_tick = 0; //Pones el reloj global en 0
+	rtos_create_task(idle_task, 0, kAutoStart); //Creamos el iddle task
 	task_list.current_task = -1;
 	SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_TICKINT_Msk
 	        | SysTick_CTRL_ENABLE_Msk;
@@ -128,6 +129,7 @@ rtos_task_handle_t rtos_create_task(void (*task_body)(), uint8_t priority,
 		retval = task_list.nTasks; //Regresa el índice de la nueva tarea
 		task_list.nTasks++;
 	}
+	return retval;
 }
 
 rtos_tick_t rtos_get_clock(void)
@@ -179,7 +181,7 @@ static void dispatcher(task_switch_type_e type)
 			task_list.next_task = counter; //Se pasa a la siguiente tarea
 		}
 	}
-	if(task_list.next_task!=task_list.current_task) //Verifica si hay que hacer un cambio de contexto
+	if(task_list.next_task != task_list.current_task) //Verifica si hay que hacer un cambio de contexto
 	{
 		context_switch(type); //Cambiamos de contexto
 	}
@@ -192,7 +194,14 @@ FORCE_INLINE static void context_switch(task_switch_type_e type)
 	static uint8_t first = 1;
 	if(!first) //Verifica si es la primera vez que entramos, ya que si es la primera vez, no necesiramos respaldar el SP de una tarea que no sea ha creado todavía
 	{
-		task_list.tasks[task_list.current_task].sp = (uint32_t*)sp - 9; //Guardas el valor del stack pointer en donde le corresponde a la estructura de la tarea (-9 porque el compilador mueve la dirección)
+		if(type)
+		{
+			task_list.tasks[task_list.current_task].sp = (uint32_t*)sp - 9; //Guardas el valor del stack pointer en donde le corresponde a la estructura de la tarea (-9 porque el compilador mueve la dirección)
+		}
+		else if (kFromISR == type)
+		{
+			task_list.tasks[task_list.current_task].sp = (uint32_t*)sp + 9;
+		}
 	}
 	else
 	{
@@ -254,7 +263,7 @@ void SysTick_Handler(void)
 void PendSV_Handler(void)
 {
 	register int32_t r0 asm("r0"); //Variable del registro r0
-	SCB->ICSR = SCB_ICSR_PENDSVCLR_Msk; //Limpias la bandera de la interrupción
+	SCB->ICSR |= SCB_ICSR_PENDSVCLR_Msk; //Limpias la bandera de la interrupción
 	r0 = (uint32_t)task_list.tasks[task_list.current_task].sp; //Le asignamos al registro r0 el valor del stack que se tiene en la tarea actual
 	asm("mov r7,r0"); //Como el compilador pone en r7 el valor del stack pointer, se lo tenemos que asignar de esta forma.
 }

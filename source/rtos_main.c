@@ -1,8 +1,11 @@
+#include <stdio.h>
 #include "board.h"
+#include "peripherals.h"
 #include "pin_mux.h"
+#include "MK64F12.h"
 #include "clock_config.h"
 #include "fsl_debug_console.h"
-//comentario de
+#include "rtos_config.h"
 #include "rtos.h"
 
 void dummy_task1(void)
@@ -44,6 +47,11 @@ int main(void)
 	BOARD_InitPins();
 	BOARD_BootClockRUN();
 	BOARD_InitDebugConsole();
+
+  	/* Init board hardware. */
+    BOARD_InitBootPins();
+    BOARD_InitBootClocks();
+    BOARD_InitBootPeripherals();
 
 	rtos_create_task(dummy_task1, 1, kAutoStart);
 	rtos_create_task(dummy_task2, 2, kAutoStart);
